@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 
 @RequiredArgsConstructor
-public class IpHasher {
+public class SpringSessionLiteIpHasher {
 
     private final SpringSessionLiteProperties properties;
 

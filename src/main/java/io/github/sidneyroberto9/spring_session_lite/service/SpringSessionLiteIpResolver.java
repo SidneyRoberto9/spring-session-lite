@@ -5,7 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class IpResolver {
+public class SpringSessionLiteIpResolver {
 
     private final SpringSessionLiteProperties properties;
 

@@ -1,9 +1,9 @@
 package io.github.sidneyroberto9.spring_session_lite;
 
-import io.github.sidneyroberto9.spring_session_lite.domain.SessionRepository;
+import io.github.sidneyroberto9.spring_session_lite.domain.SpringLiteSessionRepository;
 import io.github.sidneyroberto9.spring_session_lite.sample.SampleApplication;
 import io.github.sidneyroberto9.spring_session_lite.sample.SampleController;
-import io.github.sidneyroberto9.spring_session_lite.security.SessionUser;
+import io.github.sidneyroberto9.spring_session_lite.security.SpringSessionLiteUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,7 +26,7 @@ class SpringSessionLiteApplicationTests {
     private TestRestTemplate rest;
 
     @Autowired
-    private SessionRepository sessionRepository;
+    private SpringLiteSessionRepository sessionRepository;
 
     @BeforeEach
     void cleanDb() {
@@ -43,10 +43,10 @@ class SpringSessionLiteApplicationTests {
 
     @Test
     void loginWritesCookieWithCorrectAttributes() {
-        ResponseEntity<SessionUser> response = rest.postForEntity(
+        ResponseEntity<SpringSessionLiteUser> response = rest.postForEntity(
                 base() + "/login",
                 new SampleController.LoginRequest("1", "test@test.com"),
-                SessionUser.class);
+                SpringSessionLiteUser.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -65,8 +65,8 @@ class SpringSessionLiteApplicationTests {
         HttpHeaders headers = new HttpHeaders();
         headers.add("Cookie", cookie);
 
-        ResponseEntity<SessionUser> response = rest.exchange(
-                base() + "/me", HttpMethod.GET, new HttpEntity<>(headers), SessionUser.class);
+        ResponseEntity<SpringSessionLiteUser> response = rest.exchange(
+                base() + "/me", HttpMethod.GET, new HttpEntity<>(headers), SpringSessionLiteUser.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -82,10 +82,10 @@ class SpringSessionLiteApplicationTests {
 
     @Test
     void loginEndpointReachableWithoutSession() {
-        ResponseEntity<SessionUser> response = rest.postForEntity(
+        ResponseEntity<SpringSessionLiteUser> response = rest.postForEntity(
                 base() + "/login",
                 new SampleController.LoginRequest("x", "x@x.com"),
-                SessionUser.class);
+                SpringSessionLiteUser.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
@@ -156,10 +156,10 @@ class SpringSessionLiteApplicationTests {
     }
 
     private String doLogin(String userId, String email) {
-        ResponseEntity<SessionUser> response = rest.postForEntity(
+        ResponseEntity<SpringSessionLiteUser> response = rest.postForEntity(
                 base() + "/login",
                 new SampleController.LoginRequest(userId, email),
-                SessionUser.class);
+                SpringSessionLiteUser.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         String setCookie = response.getHeaders().getFirst("Set-Cookie");
         assertThat(setCookie).isNotNull();

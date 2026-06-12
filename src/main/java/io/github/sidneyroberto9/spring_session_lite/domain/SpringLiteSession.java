@@ -12,13 +12,13 @@ import java.time.Instant;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "m4_sessions",
+        name = "spring_lite_sessions",
         indexes = {
-                @Index(name = "idx_m4_sessions_session_id", columnList = "session_id", unique = true),
-                @Index(name = "idx_m4_sessions_expires_at", columnList = "expires_at")
+                @Index(name = "idx_spring_lite_sessions_session_id", columnList = "session_id", unique = true),
+                @Index(name = "idx_spring_lite_sessions_expires_at", columnList = "expires_at")
         }
 )
-public class Session {
+public class SpringLiteSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

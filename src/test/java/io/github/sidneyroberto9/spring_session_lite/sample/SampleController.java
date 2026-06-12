@@ -1,8 +1,8 @@
 package io.github.sidneyroberto9.spring_session_lite.sample;
 
-import io.github.sidneyroberto9.spring_session_lite.security.SessionUser;
-import io.github.sidneyroberto9.spring_session_lite.service.SessionLiteService;
-import io.github.sidneyroberto9.spring_session_lite.web.CurrentSession;
+import io.github.sidneyroberto9.spring_session_lite.security.SpringSessionLiteUser;
+import io.github.sidneyroberto9.spring_session_lite.service.SpringSessionLiteService;
+import io.github.sidneyroberto9.spring_session_lite.web.SpringSessionLiteCurrentSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
@@ -20,20 +20,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class SampleController {
 
-    private final SessionLiteService sessionService;
+    private final SpringSessionLiteService sessionService;
 
     @PostMapping("/login")
-    public ResponseEntity<SessionUser> login(
+    public ResponseEntity<SpringSessionLiteUser> login(
             @RequestBody LoginRequest body,
             HttpServletRequest request,
             HttpServletResponse response) {
 
-        SessionUser user = sessionService.login(body.getUserId(), body.getEmail(), request, response);
+        SpringSessionLiteUser user = sessionService.login(body.getUserId(), body.getEmail(), request, response);
         return ResponseEntity.ok(user);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<SessionUser> me(@CurrentSession SessionUser user) {
+    public ResponseEntity<SpringSessionLiteUser> me(@SpringSessionLiteCurrentSession SpringSessionLiteUser user) {
         if (user == null) {
             return ResponseEntity.status(401).build();
         }

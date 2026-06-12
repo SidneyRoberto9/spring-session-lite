@@ -1,6 +1,6 @@
 package io.github.sidneyroberto9.spring_session_lite.autoconfigure;
 
-import io.github.sidneyroberto9.spring_session_lite.web.CurrentSessionArgumentResolver;
+import io.github.sidneyroberto9.spring_session_lite.web.SpringSessionLiteCurrentSessionArgumentResolver;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -14,6 +14,6 @@ public class SpringSessionLiteWebMvcConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
-        resolvers.add(new CurrentSessionArgumentResolver());
+        resolvers.add(new SpringSessionLiteCurrentSessionArgumentResolver());
     }
 }

@@ -1,15 +1,15 @@
 package io.github.sidneyroberto9.spring_session_lite.autoconfigure;
 
 import io.github.sidneyroberto9.spring_session_lite.config.SpringSessionLiteProperties;
-import io.github.sidneyroberto9.spring_session_lite.domain.Session;
-import io.github.sidneyroberto9.spring_session_lite.domain.SessionRepository;
-import io.github.sidneyroberto9.spring_session_lite.scheduler.ExpiredSessionCleanupTask;
-import io.github.sidneyroberto9.spring_session_lite.security.SessionAuthenticationFilter;
-import io.github.sidneyroberto9.spring_session_lite.service.CookieManager;
-import io.github.sidneyroberto9.spring_session_lite.service.IpHasher;
-import io.github.sidneyroberto9.spring_session_lite.service.IpResolver;
-import io.github.sidneyroberto9.spring_session_lite.service.SessionLiteService;
-import io.github.sidneyroberto9.spring_session_lite.service.UserSessionLiteService;
+import io.github.sidneyroberto9.spring_session_lite.domain.SpringLiteSession;
+import io.github.sidneyroberto9.spring_session_lite.domain.SpringLiteSessionRepository;
+import io.github.sidneyroberto9.spring_session_lite.scheduler.SpringSessionLiteCleanupTask;
+import io.github.sidneyroberto9.spring_session_lite.security.SpringSessionLiteAuthenticationFilter;
+import io.github.sidneyroberto9.spring_session_lite.service.SpringSessionLiteCookieManager;
+import io.github.sidneyroberto9.spring_session_lite.service.SpringSessionLiteIpHasher;
+import io.github.sidneyroberto9.spring_session_lite.service.SpringSessionLiteIpResolver;
+import io.github.sidneyroberto9.spring_session_lite.service.SpringSessionLiteService;
+import io.github.sidneyroberto9.spring_session_lite.service.SpringSessionLiteUserService;
 import jakarta.persistence.EntityManagerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
@@ -35,7 +35,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
         before = JpaRepositoriesAutoConfiguration.class,
         after = HibernateJpaAutoConfiguration.class
 )
-@AutoConfigurationPackage(basePackageClasses = Session.class)
+@AutoConfigurationPackage(basePackageClasses = SpringLiteSession.class)
 @ConditionalOnClass({EntityManagerFactory.class, SecurityFilterChain.class})
 @ConditionalOnProperty(prefix = "spring-session-lite", name = "enabled", matchIfMissing = true)
 @EnableConfigurationProperties(SpringSessionLiteProperties.class)
@@ -45,60 +45,60 @@ public class SpringSessionLiteAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public IpResolver ipResolver(SpringSessionLiteProperties properties) {
-        return new IpResolver(properties);
+    public SpringSessionLiteIpResolver ipResolver(SpringSessionLiteProperties properties) {
+        return new SpringSessionLiteIpResolver(properties);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public IpHasher ipHasher(SpringSessionLiteProperties properties) {
-        return new IpHasher(properties);
+    public SpringSessionLiteIpHasher ipHasher(SpringSessionLiteProperties properties) {
+        return new SpringSessionLiteIpHasher(properties);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public CookieManager cookieManager(SpringSessionLiteProperties properties) {
-        return new CookieManager(properties);
+    public SpringSessionLiteCookieManager cookieManager(SpringSessionLiteProperties properties) {
+        return new SpringSessionLiteCookieManager(properties);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public SessionLiteService sessionLiteService(
+    public SpringSessionLiteService springSessionLiteService(
             SpringSessionLiteProperties properties,
-            SessionRepository repository,
-            CookieManager cookieManager,
-            IpResolver ipResolver,
-            IpHasher ipHasher
+            SpringLiteSessionRepository repository,
+            SpringSessionLiteCookieManager cookieManager,
+            SpringSessionLiteIpResolver ipResolver,
+            SpringSessionLiteIpHasher ipHasher
     ) {
-        return new SessionLiteService(properties, repository, cookieManager, ipResolver, ipHasher);
+        return new SpringSessionLiteService(properties, repository, cookieManager, ipResolver, ipHasher);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public UserSessionLiteService userSessionLiteService() {
-        return new UserSessionLiteService();
+    public SpringSessionLiteUserService springSessionLiteUserService() {
+        return new SpringSessionLiteUserService();
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public SessionAuthenticationFilter sessionAuthenticationFilter(
-            SessionLiteService sessionLiteService,
+    public SpringSessionLiteAuthenticationFilter springSessionLiteAuthenticationFilter(
+            SpringSessionLiteService springSessionLiteService,
             SpringSessionLiteProperties properties
     ) {
-        return new SessionAuthenticationFilter(sessionLiteService, properties);
+        return new SpringSessionLiteAuthenticationFilter(springSessionLiteService, properties);
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public ExpiredSessionCleanupTask expiredSessionCleanupTask(SessionLiteService sessionLiteService) {
-        return new ExpiredSessionCleanupTask(sessionLiteService);
+    public SpringSessionLiteCleanupTask springSessionLiteCleanupTask(SpringSessionLiteService springSessionLiteService) {
+        return new SpringSessionLiteCleanupTask(springSessionLiteService);
     }
 
     @Bean
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     public SecurityFilterChain sessionLiteSecurityFilterChain(
             HttpSecurity http,
-            SessionAuthenticationFilter sessionAuthenticationFilter,
+            SpringSessionLiteAuthenticationFilter springSessionLiteAuthenticationFilter,
             SpringSessionLiteProperties properties
     ) throws Exception {
 
@@ -115,7 +115,7 @@ public class SpringSessionLiteAutoConfiguration {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(properties.getPermitAllPaths().toArray(String[]::new)).permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(springSessionLiteAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

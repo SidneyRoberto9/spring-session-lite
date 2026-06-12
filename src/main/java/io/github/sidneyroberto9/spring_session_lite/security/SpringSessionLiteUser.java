@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class SessionUser {
+public class SpringSessionLiteUser {
     private final String userId;
     private final String email;
     private final String sessionId;

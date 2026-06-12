@@ -1,7 +1,7 @@
 package io.github.sidneyroberto9.spring_session_lite.security;
 
 import io.github.sidneyroberto9.spring_session_lite.config.SpringSessionLiteProperties;
-import io.github.sidneyroberto9.spring_session_lite.service.SessionLiteService;
+import io.github.sidneyroberto9.spring_session_lite.service.SpringSessionLiteService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
-public class SessionAuthenticationFilter extends OncePerRequestFilter {
+public class SpringSessionLiteAuthenticationFilter extends OncePerRequestFilter {
 
-    private final SessionLiteService sessionService;
+    private final SpringSessionLiteService sessionService;
     private final SpringSessionLiteProperties properties;
 
     @Override
@@ -38,7 +38,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Optional<SessionUser> user = sessionService.validate(sessionId, request);
+        Optional<SpringSessionLiteUser> user = sessionService.validate(sessionId, request);
 
         if (user.isEmpty()) {
             deny(response);

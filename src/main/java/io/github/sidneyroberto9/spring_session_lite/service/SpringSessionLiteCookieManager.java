@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
 
 @RequiredArgsConstructor
-public class CookieManager {
+public class SpringSessionLiteCookieManager {
 
     private final SpringSessionLiteProperties properties;
 
