@@ -7,9 +7,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.Optional;
 
-public interface SpringLiteSessionRepository extends JpaRepository<SpringLiteSession, String> {
+public interface SpringSessionLiteSessionRepository extends JpaRepository<SpringSessionLiteSession, String> {
 
-    Optional<SpringLiteSession> findBySessionId(String sessionId);
+    Optional<SpringSessionLiteSession> findBySessionId(String sessionId);
+
+    @Modifying
+    @Transactional
+    long deleteBySessionId(String sessionId);
+
+    @Modifying
+    @Transactional
+    long deleteByUserId(String userId);
 
     @Modifying
     @Transactional

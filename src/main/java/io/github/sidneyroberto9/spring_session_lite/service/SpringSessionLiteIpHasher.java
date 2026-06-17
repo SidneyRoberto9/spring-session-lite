@@ -1,22 +1,25 @@
 package io.github.sidneyroberto9.spring_session_lite.service;
 
 import io.github.sidneyroberto9.spring_session_lite.config.SpringSessionLiteProperties;
-import lombok.RequiredArgsConstructor;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 
-@RequiredArgsConstructor
 public class SpringSessionLiteIpHasher {
 
-    private final SpringSessionLiteProperties properties;
+    private static final String ALGORITHM = "HmacSHA256";
+
+    private final SecretKeySpec key;
+
+    public SpringSessionLiteIpHasher(SpringSessionLiteProperties properties) {
+        this.key = new SecretKeySpec(properties.getIpHashSalt().getBytes(StandardCharsets.UTF_8), ALGORITHM);
+    }
 
     public String hash(String ip) {
         try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec key = new SecretKeySpec(properties.getIpHashSalt().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            Mac mac = Mac.getInstance(ALGORITHM);
             mac.init(key);
 
             byte[] result = mac.doFinal(ip.getBytes(StandardCharsets.UTF_8));

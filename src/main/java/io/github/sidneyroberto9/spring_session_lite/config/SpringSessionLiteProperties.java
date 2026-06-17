@@ -13,7 +13,15 @@ import java.util.List;
 @ConfigurationProperties(prefix = "spring-session-lite")
 public class SpringSessionLiteProperties {
 
-    private String cookieName = "M4SID";
+    /**
+     * Default value of {@link #ipHashSalt}. If left unchanged while {@link #cookieSecure} is
+     * enabled, the library warns at startup (see SpringSessionLiteSecurityValidator).
+     */
+    public static final String DEFAULT_IP_HASH_SALT = "spring-session-lite";
+
+    private boolean enabled = true;
+
+    private String cookieName = "SLSID";
 
     private Duration ttl = Duration.ofHours(8);
 
@@ -25,21 +33,68 @@ public class SpringSessionLiteProperties {
 
     private String cookieDomain;
 
-    private int sessionIdLength = 16;
+    /**
+     * Optional cookie name prefix. Use {@code __Host-} or {@code __Secure-} to harden the
+     * cookie. {@code __Host-} requires cookieSecure=true, cookiePath="/" and no cookieDomain.
+     */
+    private String cookiePrefix = "";
+
+    private int sessionIdLength = 21;
 
     /**
      * Salt used in HMAC-SHA256 IP hashing. Override in production with a strong secret.
      */
-    private String ipHashSalt = "spring-session-lite";
+    private String ipHashSalt = DEFAULT_IP_HASH_SALT;
 
     /**
      * Trust X-Forwarded-For header for client IP resolution. Enable only behind a trusted proxy.
      */
     private boolean trustForwardedFor = false;
 
-    private String cleanupCron = "0 */30 * * * *";
+    /**
+     * Number of trusted proxies that append to X-Forwarded-For. The client IP is taken at
+     * position (count from the right), never the spoofable left-most entry.
+     */
+    private int trustedProxyCount = 1;
 
-    private boolean enabled = true;
+    /**
+     * Whether to update last-accessed timestamp on each successful validation.
+     */
+    private boolean updateLastAccessed = true;
+
+    /**
+     * Minimum interval between last-accessed writes (throttling), to avoid a DB write per request.
+     */
+    private Duration lastAccessedThrottle = Duration.ofMinutes(5);
+
+    /**
+     * Slide the expiration forward on activity (bounded by the same throttle as last-accessed).
+     */
+    private boolean slidingExpiration = false;
+
+    /**
+     * Enable CSRF protection on the default security chain. Cookie-based auth is CSRF-sensitive;
+     * keep SameSite=Lax/Strict when this is disabled.
+     */
+    private boolean csrfEnabled = false;
+
+    /**
+     * Enable CORS on the default security chain (required for cross-origin cookie auth).
+     */
+    private boolean corsEnabled = false;
+
+    private List<String> corsAllowedOrigins = new ArrayList<>();
+
+    private List<String> corsAllowedMethods = new ArrayList<>(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
+    private boolean corsAllowCredentials = true;
+
+    /**
+     * Register the scheduled expired-session cleanup task.
+     */
+    private boolean cleanupEnabled = true;
+
+    private String cleanupCron = "0 */30 * * * *";
 
     private List<String> permitAllPaths = new ArrayList<>(List.of("/login", "/auth/**", "/public/**"));
 }
