@@ -1,6 +1,6 @@
 package io.github.sidneyroberto9.spring_session_lite;
 
-import io.github.sidneyroberto9.spring_session_lite.domain.SpringLiteSessionRepository;
+import io.github.sidneyroberto9.spring_session_lite.domain.SpringSessionLiteSessionRepository;
 import io.github.sidneyroberto9.spring_session_lite.sample.SampleApplication;
 import io.github.sidneyroberto9.spring_session_lite.sample.SampleController;
 import io.github.sidneyroberto9.spring_session_lite.security.SpringSessionLiteUser;
@@ -13,6 +13,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.*;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -26,7 +27,7 @@ class SpringSessionLiteApplicationTests {
     private TestRestTemplate rest;
 
     @Autowired
-    private SpringLiteSessionRepository sessionRepository;
+    private SpringSessionLiteSessionRepository sessionRepository;
 
     @BeforeEach
     void cleanDb() {
@@ -52,7 +53,7 @@ class SpringSessionLiteApplicationTests {
 
         String setCookie = response.getHeaders().getFirst("Set-Cookie");
         assertThat(setCookie).isNotNull();
-        assertThat(setCookie).contains("M4SID=");
+        assertThat(setCookie).contains("SLSID=");
         assertThat(setCookie).containsIgnoringCase("HttpOnly");
         assertThat(setCookie).containsIgnoringCase("SameSite=Lax");
         assertThat(setCookie).containsIgnoringCase("Max-Age=28800");
@@ -70,8 +71,8 @@ class SpringSessionLiteApplicationTests {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody().getUserId()).isEqualTo("user1");
-        assertThat(response.getBody().getEmail()).isEqualTo("user1@test.com");
+        assertThat(response.getBody().userId()).isEqualTo("user1");
+        assertThat(response.getBody().email()).isEqualTo("user1@test.com");
     }
 
     @Test
@@ -92,7 +93,7 @@ class SpringSessionLiteApplicationTests {
     @Test
     void meWithTamperedCookieReturns401() {
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Cookie", "M4SID=tampered-session-id-that-does-not-exist");
+        headers.add("Cookie", "SLSID=tampered-session-id-that-does-not-exist");
 
         ResponseEntity<String> response = rest.exchange(
                 base() + "/me", HttpMethod.GET, new HttpEntity<>(headers), String.class);
@@ -103,7 +104,7 @@ class SpringSessionLiteApplicationTests {
     @Test
     void meWithExpiredSessionReturns401() {
         String cookie = doLogin("user2", "user2@test.com");
-        String sessionId = cookie.split("=")[1].split(";")[0];
+        String sessionId = sessionIdFrom(cookie);
 
         sessionRepository.findBySessionId(sessionId).ifPresent(s -> {
             s.setExpiresAt(Instant.now().minusSeconds(60));
@@ -122,7 +123,7 @@ class SpringSessionLiteApplicationTests {
     @Test
     void cleanupRemovesExpiredSessions() {
         String cookie = doLogin("user3", "user3@test.com");
-        String sessionId = cookie.split("=")[1].split(";")[0];
+        String sessionId = sessionIdFrom(cookie);
 
         sessionRepository.findBySessionId(sessionId).ifPresent(s -> {
             s.setExpiresAt(Instant.now().minusSeconds(60));
@@ -139,7 +140,7 @@ class SpringSessionLiteApplicationTests {
     @Test
     void ipMismatchReturns401() {
         String cookie = doLogin("user4", "user4@test.com");
-        String sessionId = cookie.split("=")[1].split(";")[0];
+        String sessionId = sessionIdFrom(cookie);
 
         sessionRepository.findBySessionId(sessionId).ifPresent(s -> {
             s.setIpHash("0000000000000000000000000000000000000000000000000000000000000000");
@@ -155,6 +156,61 @@ class SpringSessionLiteApplicationTests {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
     }
 
+    @Test
+    void loginWithDeadCookieStillReaches200() {
+        // Regression for 1.3: a stale/expired cookie must NOT block re-login on a permit-all path.
+        String cookie = doLogin("user5", "user5@test.com");
+        String sessionId = sessionIdFrom(cookie);
+
+        sessionRepository.findBySessionId(sessionId).ifPresent(s -> {
+            s.setExpiresAt(Instant.now().minusSeconds(60));
+            sessionRepository.save(s);
+        });
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", cookie);
+
+        ResponseEntity<SpringSessionLiteUser> response = rest.exchange(
+                base() + "/login", HttpMethod.POST,
+                new HttpEntity<>(new SampleController.LoginRequest("user5", "user5@test.com"), headers),
+                SpringSessionLiteUser.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test
+    void logoutClearsCookieAndSession() {
+        String cookie = doLogin("user6", "user6@test.com");
+        String sessionId = sessionIdFrom(cookie);
+        assertThat(sessionRepository.findBySessionId(sessionId)).isPresent();
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", cookie);
+
+        ResponseEntity<Void> logout = rest.exchange(
+                base() + "/logout", HttpMethod.POST, new HttpEntity<>(headers), Void.class);
+
+        assertThat(logout.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+        assertThat(logout.getHeaders().getFirst("Set-Cookie")).containsIgnoringCase("Max-Age=0");
+        assertThat(sessionRepository.findBySessionId(sessionId)).isEmpty();
+    }
+
+    @Test
+    void loginWithRolesExposesRolesInPrincipal() {
+        SampleController.LoginRequest body = new SampleController.LoginRequest("user7", "user7@test.com", List.of("ADMIN", "USER"));
+        ResponseEntity<SpringSessionLiteUser> login = rest.postForEntity(base() + "/login", body, SpringSessionLiteUser.class);
+        String cookie = login.getHeaders().getFirst("Set-Cookie").split(";")[0];
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cookie", cookie);
+
+        ResponseEntity<SpringSessionLiteUser> me = rest.exchange(
+                base() + "/me", HttpMethod.GET, new HttpEntity<>(headers), SpringSessionLiteUser.class);
+
+        assertThat(me.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(me.getBody().roles()).containsExactlyInAnyOrder("ADMIN", "USER");
+    }
+
     private String doLogin(String userId, String email) {
         ResponseEntity<SpringSessionLiteUser> response = rest.postForEntity(
                 base() + "/login",
@@ -164,5 +220,9 @@ class SpringSessionLiteApplicationTests {
         String setCookie = response.getHeaders().getFirst("Set-Cookie");
         assertThat(setCookie).isNotNull();
         return setCookie.split(";")[0];
+    }
+
+    private String sessionIdFrom(String cookie) {
+        return cookie.split("=", 2)[1];
     }
 }
