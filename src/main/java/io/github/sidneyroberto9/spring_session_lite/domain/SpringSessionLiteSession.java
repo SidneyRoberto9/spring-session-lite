@@ -1,6 +1,12 @@
 package io.github.sidneyroberto9.spring_session_lite.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,13 +18,14 @@ import java.time.Instant;
 @NoArgsConstructor
 @Entity
 @Table(
-        name = "spring_lite_sessions",
+        name = "spring_session_lite_sessions",
         indexes = {
-                @Index(name = "idx_spring_lite_sessions_session_id", columnList = "session_id", unique = true),
-                @Index(name = "idx_spring_lite_sessions_expires_at", columnList = "expires_at")
+                @Index(name = "idx_spring_session_lite_sessions_session_id", columnList = "session_id", unique = true),
+                @Index(name = "idx_spring_session_lite_sessions_user_id", columnList = "user_id"),
+                @Index(name = "idx_spring_session_lite_sessions_expires_at", columnList = "expires_at")
         }
 )
-public class SpringLiteSession {
+public class SpringSessionLiteSession {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -32,6 +39,9 @@ public class SpringLiteSession {
 
     @Column(name = "email")
     private String email;
+
+    @Column(name = "roles")
+    private String roles;
 
     @Column(name = "ip_hash", nullable = false, length = 64)
     private String ipHash;

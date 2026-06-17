@@ -1,42 +1,61 @@
 package io.github.sidneyroberto9.spring_session_lite.service;
 
 import io.github.sidneyroberto9.spring_session_lite.config.SpringSessionLiteProperties;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseCookie;
+
+import java.time.Duration;
 
 @RequiredArgsConstructor
 public class SpringSessionLiteCookieManager {
 
     private final SpringSessionLiteProperties properties;
 
-    public void write(HttpServletResponse response, String sessionId) {
-        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(properties.getCookieName(), sessionId)
-                .httpOnly(true)
-                .secure(properties.isCookieSecure())
-                .sameSite(properties.getCookieSameSite())
-                .path(properties.getCookiePath())
-                .maxAge(properties.getTtl());
+    public String cookieName() {
+        return properties.getCookiePrefix() + properties.getCookieName();
+    }
 
-        if (properties.getCookieDomain() != null) {
-            builder.domain(properties.getCookieDomain());
+    public String read(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+
+        if (cookies == null) {
+            return null;
         }
 
-        response.addHeader("Set-Cookie", builder.build().toString());
+        String name = cookieName();
+
+        for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName())) {
+                return cookie.getValue();
+            }
+        }
+
+        return null;
+    }
+
+    public void write(HttpServletResponse response, String sessionId) {
+        response.addHeader("Set-Cookie", build(sessionId, properties.getTtl()).toString());
     }
 
     public void clear(HttpServletResponse response) {
-        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(properties.getCookieName(), "")
+        response.addHeader("Set-Cookie", build("", Duration.ZERO).toString());
+    }
+
+    private ResponseCookie build(String value, Duration maxAge) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(cookieName(), value)
                 .httpOnly(true)
                 .secure(properties.isCookieSecure())
                 .sameSite(properties.getCookieSameSite())
                 .path(properties.getCookiePath())
-                .maxAge(0);
+                .maxAge(maxAge);
 
         if (properties.getCookieDomain() != null) {
             builder.domain(properties.getCookieDomain());
         }
 
-        response.addHeader("Set-Cookie", builder.build().toString());
+        return builder.build();
     }
 }

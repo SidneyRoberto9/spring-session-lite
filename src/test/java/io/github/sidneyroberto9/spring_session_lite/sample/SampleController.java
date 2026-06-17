@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 public class SampleController {
@@ -28,8 +30,15 @@ public class SampleController {
             HttpServletRequest request,
             HttpServletResponse response) {
 
-        SpringSessionLiteUser user = sessionService.login(body.getUserId(), body.getEmail(), request, response);
+        List<String> roles = body.getRoles() == null ? List.of() : body.getRoles();
+        SpringSessionLiteUser user = sessionService.login(body.getUserId(), body.getEmail(), roles, request, response);
         return ResponseEntity.ok(user);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
+        sessionService.logout(request, response);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/me")
@@ -47,5 +56,11 @@ public class SampleController {
     public static class LoginRequest {
         private String userId;
         private String email;
+        private List<String> roles;
+
+        public LoginRequest(String userId, String email) {
+            this.userId = userId;
+            this.email = email;
+        }
     }
 }

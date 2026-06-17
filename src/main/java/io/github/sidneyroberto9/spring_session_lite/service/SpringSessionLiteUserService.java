@@ -10,9 +10,11 @@ public class SpringSessionLiteUserService {
 
     public Optional<SpringSessionLiteUser> currentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
         if (auth != null && auth.getPrincipal() instanceof SpringSessionLiteUser user) {
             return Optional.of(user);
         }
+
         return Optional.empty();
     }
 }
